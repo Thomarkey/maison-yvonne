@@ -1,0 +1,22 @@
+# Gradle / JVM
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Node
+node_modules/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+
+# Local config
+*.local
+.env
+.env.*
+!.env.example
+CLAUDE.md
