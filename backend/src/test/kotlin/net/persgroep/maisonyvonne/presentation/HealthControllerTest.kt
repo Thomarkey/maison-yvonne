@@ -1,4 +1,4 @@
-package net.persgroep.maisonyvonne
+package net.persgroep.maisonyvonne.presentation
 
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
