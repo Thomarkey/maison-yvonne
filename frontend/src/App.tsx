@@ -1,19 +1,7 @@
-import { useEffect, useState } from 'react'
+import { Home } from './Home'
+import { AppShell } from './app/AppShell'
 
+/** Same bundle: the public website on /, the pilot app on /app. */
 export function App() {
-  const [status, setStatus] = useState('…')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((r) => r.json())
-      .then((b) => setStatus(b.status))
-      .catch(() => setStatus('unreachable'))
-  }, [])
-
-  return (
-    <main>
-      <h1>Maison Yvonne</h1>
-      <p>backend: {status}</p>
-    </main>
-  )
+  return window.location.pathname.startsWith('/app') ? <AppShell /> : <Home />
 }

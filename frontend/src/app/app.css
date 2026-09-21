@@ -1,0 +1,273 @@
+.app {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1rem 1rem 4rem;
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0 1.5rem;
+}
+
+.app-mark {
+  font-family: var(--serif);
+  letter-spacing: 0.22em;
+  color: var(--green);
+}
+
+.linkish {
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--green);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.app h1 {
+  font-size: clamp(1.6rem, 6vw, 2.1rem);
+  margin-bottom: 0.75rem;
+}
+
+.card {
+  background: var(--sage);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.app label {
+  display: block;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--green);
+  margin-bottom: 1rem;
+}
+
+.app input,
+.app select,
+.app textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.75rem;
+  border: 1px solid var(--sand);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--chocolate);
+  font: inherit;
+  font-size: 1rem; /* keeps iOS from zooming on focus */
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.app textarea {
+  resize: vertical;
+}
+
+.app label.check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 1rem;
+  color: var(--chocolate);
+  margin-bottom: 0.6rem;
+}
+
+.app label.check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0;
+  flex: none;
+}
+
+.app fieldset {
+  border: 1px solid var(--sand);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin: 0 0 1.5rem;
+}
+
+.app legend {
+  padding: 0 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+}
+
+.optional {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--chocolate);
+  opacity: 0.6;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: center;
+}
+
+.hello {
+  margin: 0;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--terracotta);
+}
+
+.meal + .meal {
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--sand);
+}
+
+.meal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.meal-number {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--terracotta);
+  color: var(--terracotta);
+  font-family: var(--serif);
+  font-size: 1rem;
+}
+
+.meal input + input {
+  margin-top: 0.5rem;
+}
+
+.btn.publish,
+.login .btn {
+  width: 100%;
+  justify-content: center;
+  padding-block: 1.1rem;
+}
+
+.error {
+  color: #8c2f13;
+  background: #f6e3da;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+}
+
+/* ---------- family dashboard ---------- */
+
+.visited {
+  background: var(--green);
+  color: var(--cream);
+  border-radius: 1rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.visited--missed {
+  background: var(--sand);
+  color: var(--chocolate);
+}
+
+.tick {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin: 0 0 0.75rem;
+}
+
+.visited h1 {
+  font-size: clamp(1.5rem, 5.5vw, 2rem);
+  margin: 0;
+}
+
+.visited .date {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+p.check {
+  margin: 1rem 0;
+  text-align: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+p.check--attention {
+  color: var(--terracotta);
+}
+
+.message {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.moment {
+  margin: 0;
+}
+
+.meals {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.meals li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  padding: 0.75rem 0;
+}
+
+.meals li + li {
+  border-top: 1px solid rgba(52, 45, 41, 0.12);
+}
+
+.meals strong {
+  display: block;
+  font-weight: 600;
+}
+
+.meals em {
+  font-style: normal;
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.card.next,
+.card.published {
+  text-align: center;
+}
+
+.card.published .tick {
+  color: var(--green);
+}
+
+.card.next p:last-child {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.3rem;
+}
