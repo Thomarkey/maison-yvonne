@@ -1,3 +1,20 @@
 spring:
   application:
     name: maison-yvonne
+
+  mongodb:
+    uri: mongodb://localhost:27017
+    database: maisonyvonne
+  data:
+    mongodb:
+      auto-index-creation: true
+  session:
+    timeout: 30d
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+        same-site: lax
+        # set SERVER_SERVLET_SESSION_COOKIE_SECURE=true behind HTTPS
+        secure: false
