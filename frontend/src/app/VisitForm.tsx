@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getJson, postJson, type MealSlot } from './api'
-
-type Senior = { id: string; preferredName: string }
+import { getJson, postJson, putJson, type AdminVisit, type MealSlot, type Senior } from './api'
 
 const SLOTS: { slot: MealSlot; number: string; label: string; storage: string }[] = [
   { slot: 'FIRST', number: '1', label: 'Eerst van genieten', storage: 'Vandaag of morgen eten' },
@@ -16,19 +14,39 @@ function localValue(date: Date) {
 
 const inSevenDays = (from: Date) => new Date(from.getTime() + 7 * 24 * 60 * 60 * 1000)
 
-export function VisitForm({ adminName }: { adminName: string }) {
+const blankMeals = () => SLOTS.map((s) => ({ dishName: '', storageInfo: s.storage }))
+
+/** Registers a new visit, or edits [visit] and calls [onSaved] when given one. */
+export function VisitForm({
+  adminName,
+  visit,
+  onSaved,
+}: {
+  adminName: string
+  visit?: AdminVisit
+  onSaved?: () => void
+}) {
   const now = new Date()
   const [seniors, setSeniors] = useState<Senior[]>([])
   const [dishNames, setDishNames] = useState<string[]>([])
-  const [seniorId, setSeniorId] = useState('')
-  const [scheduledAt, setScheduledAt] = useState(localValue(now))
-  const [completed, setCompleted] = useState(true)
-  const [attention, setAttention] = useState(false)
-  const [internalNote, setInternalNote] = useState('')
-  const [familyMessage, setFamilyMessage] = useState('')
-  const [momentOfWeek, setMomentOfWeek] = useState('')
-  const [meals, setMeals] = useState(SLOTS.map((s) => ({ dishName: '', storageInfo: s.storage })))
-  const [nextVisitAt, setNextVisitAt] = useState(localValue(inSevenDays(now)))
+  const [seniorId, setSeniorId] = useState(visit?.seniorId ?? '')
+  const [scheduledAt, setScheduledAt] = useState(localValue(visit ? new Date(visit.scheduledAt) : now))
+  const [completed, setCompleted] = useState(visit?.completed ?? true)
+  const [attention, setAttention] = useState(visit?.check === 'ATTENTION')
+  const [internalNote, setInternalNote] = useState(visit?.internalNote ?? '')
+  const [familyMessage, setFamilyMessage] = useState(visit?.familyMessage ?? '')
+  const [momentOfWeek, setMomentOfWeek] = useState(visit?.momentOfWeek ?? '')
+  const [meals, setMeals] = useState(() =>
+    visit
+      ? SLOTS.map((s) => {
+          const meal = visit.meals.find((m) => m.slot === s.slot)
+          return { dishName: meal?.dishName ?? '', storageInfo: meal?.storageInfo ?? s.storage }
+        })
+      : blankMeals(),
+  )
+  const [nextVisitAt, setNextVisitAt] = useState(
+    visit ? (visit.nextVisitAt ? localValue(new Date(visit.nextVisitAt)) : '') : localValue(inSevenDays(now)),
+  )
   const [error, setError] = useState<string | null>(null)
   const [publishedFor, setPublishedFor] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -37,11 +55,11 @@ export function VisitForm({ adminName }: { adminName: string }) {
     getJson<Senior[]>('/api/admin/seniors')
       .then((list) => {
         setSeniors(list)
-        if (list.length === 1) setSeniorId(list[0].id)
+        if (list.length === 1 && !visit) setSeniorId(list[0].id)
       })
       .catch((e: Error) => setError(e.message))
     getJson<string[]>('/api/admin/dish-names').then(setDishNames).catch(() => setDishNames([]))
-  }, [])
+  }, [visit])
 
   const senior = seniors.find((s) => s.id === seniorId)
 
@@ -49,7 +67,7 @@ export function VisitForm({ adminName }: { adminName: string }) {
     event.preventDefault()
     setBusy(true)
     setError(null)
-    postJson('/api/admin/visits', {
+    const body = {
       seniorId,
       scheduledAt: new Date(scheduledAt).toISOString(),
       completed,
@@ -59,14 +77,16 @@ export function VisitForm({ adminName }: { adminName: string }) {
       internalNote: attention ? internalNote : null,
       meals: SLOTS.map((s, i) => ({ slot: s.slot, ...meals[i] })),
       nextVisitAt: nextVisitAt ? new Date(nextVisitAt).toISOString() : null,
-    })
+    }
+    ;(visit ? putJson(`/api/admin/visits/${visit.id}`, body) : postJson('/api/admin/visits', body))
       .then(() => {
+        if (onSaved) return onSaved()
         setPublishedFor(senior?.preferredName ?? null)
         setFamilyMessage('')
         setMomentOfWeek('')
         setInternalNote('')
         setAttention(false)
-        setMeals(SLOTS.map((s) => ({ dishName: '', storageInfo: s.storage })))
+        setMeals(blankMeals())
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusy(false))
@@ -88,7 +108,7 @@ export function VisitForm({ adminName }: { adminName: string }) {
   return (
     <form className="visit-form" onSubmit={submit}>
       <p className="hello">Dag {adminName}</p>
-      <h1>Bezoek registreren</h1>
+      <h1>{visit ? 'Bezoek bewerken' : 'Bezoek registreren'}</h1>
 
       <label>
         Senior
@@ -202,8 +222,13 @@ export function VisitForm({ adminName }: { adminName: string }) {
 
       {error && <p className="error">{error}</p>}
       <button className="btn publish" type="submit" disabled={busy}>
-        Publiceren
+        {visit ? 'Opslaan' : 'Publiceren'}
       </button>
+      {onSaved && (
+        <button className="linkish" type="button" onClick={onSaved}>
+          Annuleren
+        </button>
+      )}
     </form>
   )
 }

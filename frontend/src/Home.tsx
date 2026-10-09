@@ -59,6 +59,9 @@ export function Home() {
         <a className="btn" href="#interesse">
           Interesse?
         </a>
+        <a className="btn" href="/app">
+          Aanmelden
+        </a>
         <div className="lang">
           <a href="#">NL</a>
           <span aria-hidden>|</span>

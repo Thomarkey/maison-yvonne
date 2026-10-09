@@ -7,4 +7,7 @@ interface SeniorRepository {
     fun findAll(): List<Senior>
 
     fun find(id: UUID): Senior?
+
+    /** Inserts or overwrites by id. */
+    fun save(senior: Senior)
 }

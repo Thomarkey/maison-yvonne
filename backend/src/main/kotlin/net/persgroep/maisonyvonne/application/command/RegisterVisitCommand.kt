@@ -1,11 +1,13 @@
 package net.persgroep.maisonyvonne.application.command
 
 import net.persgroep.maisonyvonne.application.domain.Meal
+import net.persgroep.maisonyvonne.application.domain.Visit
 import net.persgroep.maisonyvonne.application.domain.YvonneCheck
 import java.time.Instant
 import java.util.UUID
 
-data class RegisterVisitCommand(
+/** What an admin fills in on the visit form, whether registering or editing. */
+data class VisitDetails(
     val seniorId: UUID,
     val scheduledAt: Instant,
     val completed: Boolean,
@@ -15,5 +17,30 @@ data class RegisterVisitCommand(
     val internalNote: String?,
     val meals: List<Meal>,
     val nextVisitAt: Instant?,
+) {
+    fun toVisit(id: UUID, createdBy: UUID, publishedAt: Instant?) = Visit(
+        id = id,
+        seniorId = seniorId,
+        scheduledAt = scheduledAt,
+        completed = completed,
+        check = check,
+        familyMessage = familyMessage,
+        momentOfWeek = momentOfWeek?.takeIf { it.isNotBlank() },
+        internalNote = internalNote?.takeIf { it.isNotBlank() },
+        meals = meals,
+        nextVisitAt = nextVisitAt,
+        createdBy = createdBy,
+        publishedAt = publishedAt,
+    )
+}
+
+data class RegisterVisitCommand(
+    val details: VisitDetails,
     val registeredBy: UUID,
+)
+
+data class UpdateVisitCommand(
+    val visitId: UUID,
+    val details: VisitDetails,
+    val editedBy: UUID,
 )

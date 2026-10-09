@@ -94,6 +94,9 @@ data class VisitDocument(
     /** Drops the internal note on the way out, so it cannot reach a family DTO. */
     fun toFamilyVisit() = toDomain(internalNote = null)
 
+    /** Admin read: keeps the internal note. */
+    fun toDomain() = toDomain(internalNote = internalNote)
+
     private fun toDomain(internalNote: String?) = Visit(
         id = UUID.fromString(id),
         seniorId = UUID.fromString(seniorId),

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { currentSession, login, logout, type Session } from './api'
+import { AdminArea } from './AdminArea'
 import { FamilyDashboard } from './FamilyDashboard'
-import { VisitForm } from './VisitForm'
 import './app.css'
 
 export function AppShell() {
@@ -31,7 +31,7 @@ export function AppShell() {
         )}
       </header>
       {!session && <LoginForm onLoggedIn={setSession} />}
-      {session?.role === 'ADMIN' && <VisitForm adminName={session.displayName} />}
+      {session?.role === 'ADMIN' && <AdminArea adminName={session.displayName} />}
       {session?.role === 'FAMILY' && <FamilyDashboard />}
     </main>
   )

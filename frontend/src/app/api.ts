@@ -20,6 +20,21 @@ export type FamilyUpdate = {
   } | null
 }
 
+export type AdminVisit = {
+  id: string
+  seniorId: string
+  scheduledAt: string
+  completed: boolean
+  check: 'ALL_AS_USUAL' | 'ATTENTION'
+  familyMessage: string
+  momentOfWeek: string | null
+  internalNote: string | null
+  meals: Meal[]
+  nextVisitAt: string | null
+  publishedAt: string | null
+  registeredBy: string | null
+}
+
 // Spring's SPA CSRF setup refreshes this cookie on every response; echo it back as a header.
 const CSRF_COOKIE = 'XSRF-TOKEN'
 const CSRF_HEADER = 'X-XSRF-TOKEN'
@@ -40,9 +55,15 @@ export async function getJson<T>(url: string): Promise<T> {
   return response.json()
 }
 
-export async function postJson<T>(url: string, body: unknown): Promise<T> {
+export type Senior = { id: string; preferredName: string; fullName: string }
+
+export const postJson = <T>(url: string, body: unknown) => sendJson<T>('POST', url, body)
+
+export const putJson = <T>(url: string, body: unknown) => sendJson<T>('PUT', url, body)
+
+async function sendJson<T>(method: 'POST' | 'PUT', url: string, body: unknown): Promise<T> {
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     headers: { 'Content-Type': 'application/json', ...csrfHeader() },
     body: JSON.stringify(body),
   })

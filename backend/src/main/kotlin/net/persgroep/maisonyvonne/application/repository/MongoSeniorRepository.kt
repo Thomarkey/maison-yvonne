@@ -17,4 +17,8 @@ class MongoSeniorRepository(private val mongo: MongoTemplate) : SeniorRepository
 
     override fun find(id: UUID): Senior? =
         mongo.findById(id.toString(), SeniorDocument::class.java)?.toDomain()
+
+    override fun save(senior: Senior) {
+        mongo.save(SeniorDocument.from(senior))
+    }
 }

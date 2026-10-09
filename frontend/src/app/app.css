@@ -271,3 +271,64 @@ p.check--attention {
   font-family: var(--serif);
   font-size: 1.3rem;
 }
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.tabs button {
+  border: 1px solid var(--sand);
+  border-radius: 999px;
+  background: none;
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--green);
+  cursor: pointer;
+}
+
+.tabs button[aria-selected='true'] {
+  background: var(--green);
+  border-color: var(--green);
+  color: var(--cream);
+}
+
+.card.senior summary {
+  font-family: var(--serif);
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.card.senior[open] summary {
+  margin-bottom: 1rem;
+}
+
+.card.senior .card {
+  background: #fff;
+}
+
+.new-item {
+  margin-bottom: 1.5rem;
+}
+
+.new-item summary {
+  display: inline-block;
+  list-style: none;
+  cursor: pointer;
+  background: var(--green);
+}
+
+.new-item summary:hover {
+  background: #33432f;
+}
+
+.new-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.new-item[open] summary {
+  margin-bottom: 1rem;
+}

@@ -1,5 +1,6 @@
 package net.persgroep.maisonyvonne
 
+import com.jayway.jsonpath.JsonPath
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -115,6 +116,30 @@ class PilotFlowTest(
             .bodyJson()
             .extractingPath("$[0].senior.id")
             .isEqualTo(otherSenior.id.toString())
+
+        // the admin overview lists the visit, internal note included
+        assertThat(mockMvc.get().uri("/api/admin/visits").session(adminSession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[?(@.seniorId == '${louisa.id}')].internalNote")
+            .asArray()
+            .containsExactly("Loopt wat moeizamer dan vorige week.")
+        assertThat(mockMvc.get().uri("/api/admin/visits").session(login(daughter.email)))
+            .hasStatus(HttpStatus.FORBIDDEN)
+
+        // "mijn bezoeken" only holds what the logged-in admin registered
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").session(adminSession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[*].seniorId")
+            .asArray()
+            .containsExactly(louisa.id.toString())
+        val otherAdmin = account(role = UserRole.ADMIN, displayName = "Louis")
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").session(login(otherAdmin.email)))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$.length()")
+            .isEqualTo(0)
     }
 
     @Test
@@ -131,6 +156,104 @@ class PilotFlowTest(
 
         assertThat(mockMvc.get().uri("/api/family/dashboard")).hasStatus(HttpStatus.UNAUTHORIZED)
         assertThat(mockMvc.get().uri("/api/health")).hasStatusOk()
+    }
+
+    @Test
+    fun `an admin edits only their own visits and manages seniors`() {
+        val yasmina = account(role = UserRole.ADMIN, displayName = "Yasmina")
+        val louis = account(role = UserRole.ADMIN, displayName = "Louis")
+        val yasminaSession = login(yasmina.email)
+        val louisSession = login(louis.email)
+
+        val created = mockMvc.post().uri("/api/admin/seniors")
+            .session(yasminaSession)
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""{"preferredName": "Jos", "fullName": "Jos Peeters"}""")
+            .exchange()
+        assertThat(created).hasStatusOk()
+        val seniorId = UUID.fromString(JsonPath.read(created.response.contentAsString, "$.id"))
+
+        assertThat(
+            mockMvc.put().uri("/api/admin/seniors/$seniorId")
+                .session(louisSession)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"preferredName": "Jozef", "fullName": "Jozef Peeters"}"""),
+        ).hasStatusOk().bodyJson().extractingPath("$.preferredName").isEqualTo("Jozef")
+
+        // no preferred name: the first name from the full name stands in
+        assertThat(
+            mockMvc.post().uri("/api/admin/seniors")
+                .session(yasminaSession)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{"preferredName": "", "fullName": "Maria Janssens"}"""),
+        ).hasStatusOk().bodyJson().extractingPath("$.preferredName").isEqualTo("Maria")
+
+        val daughter = account(
+            role = UserRole.FAMILY,
+            displayName = "An",
+            links = listOf(FamilyLinkDocument(seniorId.toString(), "dochter")),
+        )
+        val visitedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS)
+        fun visitBody(familyMessage: String) = """
+            {
+              "seniorId": "$seniorId",
+              "scheduledAt": "$visitedAt",
+              "completed": false,
+              "check": "ALL_AS_USUAL",
+              "familyMessage": "$familyMessage",
+              "meals": [],
+              "nextVisitAt": null
+            }
+        """.trimIndent()
+
+        val registered = mockMvc.post().uri("/api/admin/visits")
+            .session(yasminaSession)
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(visitBody("Jos was niet thuis."))
+            .exchange()
+        assertThat(registered).hasStatusOk()
+        val visitId = JsonPath.read<String>(registered.response.contentAsString, "$.id")
+
+        // another admin may not touch it
+        assertThat(
+            mockMvc.put().uri("/api/admin/visits/$visitId")
+                .session(louisSession)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(visitBody("Overschreven door Louis.")),
+        ).hasStatus(HttpStatus.FORBIDDEN)
+
+        assertThat(
+            mockMvc.put().uri("/api/admin/visits/$visitId")
+                .session(yasminaSession)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(visitBody("Jos was bij de buren.")),
+        ).hasStatusOk()
+
+        assertThat(mockMvc.get().uri("/api/family/dashboard").session(login(daughter.email)))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[0].lastVisit.familyMessage")
+            .isEqualTo("Jos was bij de buren.")
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").session(yasminaSession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[*].id")
+            .asArray()
+            .containsExactly(visitId)
+
+        // the seniors overview shows who did the visit, also to other admins
+        assertThat(mockMvc.get().uri("/api/admin/visits").session(louisSession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[?(@.id == '$visitId')].registeredBy")
+            .asArray()
+            .containsExactly("Yasmina")
     }
 
     private fun login(email: String): MockHttpSession {

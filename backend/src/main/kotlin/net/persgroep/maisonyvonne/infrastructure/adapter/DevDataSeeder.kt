@@ -30,7 +30,7 @@ class DevDataSeeder(
         if (mongo.count(Query(), AccountDocument::class.java) > 0) return
 
         val louisa = Senior(
-            id = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+            id = UUID.randomUUID(),
             preferredName = "Louisa",
             fullName = "Louisa Vermeulen",
         )
@@ -55,6 +55,6 @@ class DevDataSeeder(
     )
 
     private companion object {
-        const val DEMO_PASSWORD = "pilot2026!"
+        const val DEMO_PASSWORD = "yvonne"
     }
 }
