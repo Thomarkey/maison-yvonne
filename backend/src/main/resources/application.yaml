@@ -11,6 +11,7 @@ spring:
   session:
     timeout: 30d
 server:
+  port: ${PORT:8080}
   servlet:
     session:
       cookie:
