@@ -16,7 +16,7 @@ import net.persgroep.maisonyvonne.application.domain.Senior
 import net.persgroep.maisonyvonne.application.domain.UserRole
 import org.springframework.http.MediaType
 import org.springframework.data.mongodb.core.MongoTemplate
-import org.springframework.mock.web.MockHttpSession
+import jakarta.servlet.http.Cookie
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.test.web.servlet.assertj.MockMvcTester
@@ -71,7 +71,7 @@ class PilotFlowTest(
 
         assertThat(
             mockMvc.post().uri("/api/admin/visits")
-                .session(adminSession)
+                .cookie(adminSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(
@@ -95,7 +95,7 @@ class PilotFlowTest(
                 ),
         ).hasStatusOk()
 
-        val dashboard = mockMvc.get().uri("/api/family/dashboard").session(login(daughter.email))
+        val dashboard = mockMvc.get().uri("/api/family/dashboard").cookie(login(daughter.email))
         assertThat(dashboard).hasStatusOk().bodyJson().apply {
             extractingPath("$.length()").isEqualTo(1)
             extractingPath("$[0].senior.id").isEqualTo(louisa.id.toString())
@@ -111,31 +111,31 @@ class PilotFlowTest(
             .doesNotContain("internalNote")
 
         // a family member linked to another senior sees nothing of Louisa
-        assertThat(mockMvc.get().uri("/api/family/dashboard").session(login(stranger.email)))
+        assertThat(mockMvc.get().uri("/api/family/dashboard").cookie(login(stranger.email)))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[0].senior.id")
             .isEqualTo(otherSenior.id.toString())
 
         // the admin overview lists the visit, internal note included
-        assertThat(mockMvc.get().uri("/api/admin/visits").session(adminSession))
+        assertThat(mockMvc.get().uri("/api/admin/visits").cookie(adminSession))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[?(@.seniorId == '${louisa.id}')].internalNote")
             .asArray()
             .containsExactly("Loopt wat moeizamer dan vorige week.")
-        assertThat(mockMvc.get().uri("/api/admin/visits").session(login(daughter.email)))
+        assertThat(mockMvc.get().uri("/api/admin/visits").cookie(login(daughter.email)))
             .hasStatus(HttpStatus.FORBIDDEN)
 
         // "mijn bezoeken" only holds what the logged-in admin registered
-        assertThat(mockMvc.get().uri("/api/admin/visits/mine").session(adminSession))
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").cookie(adminSession))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[*].seniorId")
             .asArray()
             .containsExactly(louisa.id.toString())
         val otherAdmin = account(role = UserRole.ADMIN, displayName = "Louis")
-        assertThat(mockMvc.get().uri("/api/admin/visits/mine").session(login(otherAdmin.email)))
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").cookie(login(otherAdmin.email)))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$.length()")
@@ -148,7 +148,7 @@ class PilotFlowTest(
 
         assertThat(
             mockMvc.post().uri("/api/admin/visits")
-                .session(login(daughter.email))
+                .cookie(login(daughter.email))
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{}"),
@@ -166,7 +166,7 @@ class PilotFlowTest(
         val louisSession = login(louis.email)
 
         val created = mockMvc.post().uri("/api/admin/seniors")
-            .session(yasminaSession)
+            .cookie(yasminaSession)
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content("""{"preferredName": "Jos", "fullName": "Jos Peeters"}""")
@@ -176,7 +176,7 @@ class PilotFlowTest(
 
         assertThat(
             mockMvc.put().uri("/api/admin/seniors/$seniorId")
-                .session(louisSession)
+                .cookie(louisSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"preferredName": "Jozef", "fullName": "Jozef Peeters"}"""),
@@ -185,7 +185,7 @@ class PilotFlowTest(
         // no preferred name: the first name from the full name stands in
         assertThat(
             mockMvc.post().uri("/api/admin/seniors")
-                .session(yasminaSession)
+                .cookie(yasminaSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{"preferredName": "", "fullName": "Maria Janssens"}"""),
@@ -210,7 +210,7 @@ class PilotFlowTest(
         """.trimIndent()
 
         val registered = mockMvc.post().uri("/api/admin/visits")
-            .session(yasminaSession)
+            .cookie(yasminaSession)
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content(visitBody("Jos was niet thuis."))
@@ -221,7 +221,7 @@ class PilotFlowTest(
         // another admin may not touch it
         assertThat(
             mockMvc.put().uri("/api/admin/visits/$visitId")
-                .session(louisSession)
+                .cookie(louisSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(visitBody("Overschreven door Louis.")),
@@ -229,18 +229,18 @@ class PilotFlowTest(
 
         assertThat(
             mockMvc.put().uri("/api/admin/visits/$visitId")
-                .session(yasminaSession)
+                .cookie(yasminaSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(visitBody("Jos was bij de buren.")),
         ).hasStatusOk()
 
-        assertThat(mockMvc.get().uri("/api/family/dashboard").session(login(daughter.email)))
+        assertThat(mockMvc.get().uri("/api/family/dashboard").cookie(login(daughter.email)))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[0].lastVisit.familyMessage")
             .isEqualTo("Jos was bij de buren.")
-        assertThat(mockMvc.get().uri("/api/admin/visits/mine").session(yasminaSession))
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").cookie(yasminaSession))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[*].id")
@@ -248,7 +248,7 @@ class PilotFlowTest(
             .containsExactly(visitId)
 
         // the seniors overview shows who did the visit, also to other admins
-        assertThat(mockMvc.get().uri("/api/admin/visits").session(louisSession))
+        assertThat(mockMvc.get().uri("/api/admin/visits").cookie(louisSession))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[?(@.id == '$visitId')].registeredBy")
@@ -264,8 +264,8 @@ class PilotFlowTest(
         val givenPassword = "given-${UUID.randomUUID()}"
         val ownPassword = "own-${UUID.randomUUID()}"
 
-        fun createAccount(session: MockHttpSession) = mockMvc.post().uri("/api/admin/accounts")
-            .session(session)
+        fun createAccount(session: Cookie) = mockMvc.post().uri("/api/admin/accounts")
+            .cookie(session)
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content(
@@ -287,14 +287,14 @@ class PilotFlowTest(
         assertThat(createAccount(login(email, givenPassword))).hasStatus(HttpStatus.FORBIDDEN)
 
         val familySession = login(email, givenPassword)
-        assertThat(mockMvc.get().uri("/api/family/dashboard").session(familySession))
+        assertThat(mockMvc.get().uri("/api/family/dashboard").cookie(familySession))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[0].relationLabel")
             .isEqualTo("dochter")
 
         fun changePassword(current: String) = mockMvc.post().uri("/api/me/password")
-            .session(familySession)
+            .cookie(familySession)
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
             .content("""{ "currentPassword": "$current", "newPassword": "$ownPassword" }""")
@@ -311,7 +311,7 @@ class PilotFlowTest(
         login(email, ownPassword)
 
         // forgotten anyway: an admin finds the account and sets a new starting password
-        val listed = mockMvc.get().uri("/api/admin/accounts").session(adminSession).exchange()
+        val listed = mockMvc.get().uri("/api/admin/accounts").cookie(adminSession).exchange()
         assertThat(listed).hasStatusOk()
         val accountId = JsonPath.read<List<String>>(listed.response.contentAsString, "$[?(@.email == '$email')].id").single()
         assertThat(JsonPath.read<List<String>>(listed.response.contentAsString, "$[?(@.email == '$email')].links[0].seniorId"))
@@ -319,7 +319,7 @@ class PilotFlowTest(
         val resetPassword = "reset-${UUID.randomUUID()}"
         assertThat(
             mockMvc.put().uri("/api/admin/accounts/$accountId/password")
-                .session(adminSession)
+                .cookie(adminSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("""{ "newPassword": "$resetPassword" }"""),
@@ -327,14 +327,14 @@ class PilotFlowTest(
         login(email, resetPassword)
     }
 
-    private fun login(email: String, password: String = this.password): MockHttpSession {
+    private fun login(email: String, password: String = this.password): Cookie {
         val result = mockMvc.post().uri("/api/auth/login")
             .param("username", email)
             .param("password", password)
             .with(csrf())
             .exchange()
         assertThat(result).hasStatus(HttpStatus.NO_CONTENT)
-        return result.request.session as MockHttpSession
+        return checkNotNull(result.response.getCookie("SESSION"))
     }
 
     private fun account(role: UserRole, displayName: String, links: List<FamilyLink> = emptyList()): Account {
