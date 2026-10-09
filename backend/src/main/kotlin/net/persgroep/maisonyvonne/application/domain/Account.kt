@@ -8,4 +8,6 @@ data class Account(
     val passwordHash: String,
     val role: UserRole,
     val displayName: String,
+    /** Which seniors this account may read. Empty for admins, who see everyone. */
+    val links: List<FamilyLink> = emptyList(),
 )

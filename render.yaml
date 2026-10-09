@@ -11,3 +11,10 @@ services:
         value: maisonyvonne
       - key: SERVER_SERVLET_SESSION_COOKIE_SECURE
         value: "true"
+      # first admin, created once on an empty database; change the password in the app afterwards
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        sync: false

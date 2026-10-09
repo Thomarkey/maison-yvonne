@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
-import { getJson, postJson, putJson, type AdminVisit, type Senior } from './api'
+import { getJson, postJson, putJson, type Account, type AdminVisit, type Role, type Senior } from './api'
 import { VisitForm } from './VisitForm'
 
 const TABS = [
   { key: 'mine', label: 'Mijn bezoeken' },
   { key: 'seniors', label: 'Seniors' },
+  { key: 'accounts', label: 'Accounts' },
 ] as const
 
 type Tab = (typeof TABS)[number]['key']
@@ -37,6 +38,7 @@ export function AdminArea({ adminName }: { adminName: string }) {
       </nav>
       {tab === 'mine' && <MyVisits adminName={adminName} />}
       {tab === 'seniors' && <SeniorsOverview adminName={adminName} />}
+      {tab === 'accounts' && <AccountsOverview />}
     </>
   )
 }
@@ -140,6 +142,192 @@ function SeniorsOverview({ adminName }: { adminName: string }) {
         )
       })}
     </>
+  )
+}
+
+function AccountsOverview() {
+  const accounts = useAdminData<Account[]>('/api/admin/accounts')
+  const seniors = useAdminData<Senior[]>('/api/admin/seniors')
+
+  if (accounts.error) return <p className="error">{accounts.error}</p>
+  if (!accounts.data) return null
+
+  const seniorName = (id: string) => seniors.data?.find((s) => s.id === id)?.fullName ?? '—'
+  // e.g. "dochter van Louisa Vermeulen"
+  const relation = (account: Account) =>
+    account.links.map((l) => `${l.relationLabel ?? 'familie'} van ${seniorName(l.seniorId)}`).join(', ')
+
+  return (
+    <>
+      <details className="new-item">
+        <summary className="btn">+ Nieuw account</summary>
+        <AccountForm onSaved={accounts.reload} />
+      </details>
+      <AccountList title="Admins" accounts={accounts.data.filter((a) => a.role === 'ADMIN')} />
+      <AccountList
+        title="Familie"
+        accounts={accounts.data.filter((a) => a.role === 'FAMILY')}
+        detail={relation}
+      />
+    </>
+  )
+}
+
+function AccountList({
+  title,
+  accounts,
+  detail,
+}: {
+  title: string
+  accounts: Account[]
+  detail?: (account: Account) => string
+}) {
+  const [resetting, setResetting] = useState<string | null>(null)
+
+  return (
+    <section className="card">
+      <p className="eyebrow">{title}</p>
+      {accounts.length === 0 ? (
+        <p>Nog geen accounts.</p>
+      ) : (
+        <ul className="meals">
+          {accounts.map((a) => (
+            <li key={a.id}>
+              <span>
+                <strong>{a.displayName}</strong>
+                <em>
+                  {a.email}
+                  {detail?.(a) && ` · ${detail(a)}`}
+                </em>{' '}
+                {resetting === a.id ? (
+                  <ResetPasswordForm account={a} onDone={() => setResetting(null)} />
+                ) : (
+                  <button type="button" className="linkish" onClick={() => setResetting(a.id)}>
+                    Wachtwoord resetten
+                  </button>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+/** Sets a new starting password for someone who forgot theirs; pass it on to them yourself. */
+function ResetPasswordForm({ account, onDone }: { account: Account; onDone: () => void }) {
+  const [newPassword, setNewPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    putJson(`/api/admin/accounts/${account.id}/password`, { newPassword })
+      .then(onDone)
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusy(false))
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <label>
+        Nieuw startwachtwoord voor {account.displayName} <span className="optional">— minstens 8 tekens</span>
+        <input
+          type="text"
+          autoComplete="off"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          minLength={8}
+          required
+        />
+      </label>
+      {error && <p className="error">{error}</p>}
+      <button className="btn" type="submit" disabled={busy}>
+        Opslaan
+      </button>
+      <button className="linkish" type="button" onClick={onDone}>
+        Annuleren
+      </button>
+    </form>
+  )
+}
+
+/** Hands out an account with a starting password; its owner changes it after logging in. */
+function AccountForm({ onSaved }: { onSaved: () => void }) {
+  const seniors = useAdminData<Senior[]>('/api/admin/seniors')
+  const empty = { email: '', displayName: '', role: 'FAMILY' as Role, password: '', seniorId: '', relationLabel: '' }
+  const [form, setForm] = useState(empty)
+  const [error, setError] = useState<string | null>(null)
+  const [created, setCreated] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const set = (field: keyof typeof empty) => (e: { target: { value: string } }) =>
+    setForm({ ...form, [field]: e.target.value })
+  const family = form.role === 'FAMILY'
+
+  const submit = (event: React.FormEvent) => {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    setCreated(null)
+    postJson('/api/admin/accounts', { ...form, seniorId: family ? form.seniorId : null })
+      .then(() => {
+        setCreated(form.email)
+        setForm(empty)
+        onSaved()
+      })
+      .catch((e: Error) => setError(e.message))
+      .finally(() => setBusy(false))
+  }
+
+  return (
+    <form onSubmit={submit}>
+      <label>
+        E-mailadres
+        <input type="email" value={form.email} onChange={set('email')} required />
+      </label>
+      <label>
+        Naam
+        <input value={form.displayName} onChange={set('displayName')} required />
+      </label>
+      <label>
+        Rol
+        <select value={form.role} onChange={set('role')}>
+          <option value="FAMILY">Familie</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </label>
+      {family && (
+        <>
+          <label>
+            Volgt senior
+            <select value={form.seniorId} onChange={set('seniorId')} required>
+              <option value="">— kies —</option>
+              {seniors.data?.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Relatie <span className="optional">— bv. dochter</span>
+            <input value={form.relationLabel} onChange={set('relationLabel')} />
+          </label>
+        </>
+      )}
+      <label>
+        Startwachtwoord <span className="optional">— minstens 8 tekens, geef het zelf door</span>
+        <input type="text" autoComplete="off" value={form.password} onChange={set('password')} minLength={8} required />
+      </label>
+      {error && <p className="error">{error}</p>}
+      {created && <p>Account voor {created} aangemaakt.</p>}
+      <button className="btn" type="submit" disabled={busy}>
+        Account aanmaken
+      </button>
+    </form>
   )
 }
 

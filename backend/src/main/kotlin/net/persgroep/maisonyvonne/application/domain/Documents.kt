@@ -22,21 +22,28 @@ data class AccountDocument(
         passwordHash = passwordHash,
         role = UserRole.valueOf(role),
         displayName = displayName,
+        links = links.map { it.toDomain() },
     )
 
     companion object {
-        fun from(account: Account, links: List<FamilyLinkDocument> = emptyList()) = AccountDocument(
+        fun from(account: Account) = AccountDocument(
             id = account.id.toString(),
             email = account.email.lowercase(),
             passwordHash = account.passwordHash,
             role = account.role.name,
             displayName = account.displayName,
-            links = links,
+            links = account.links.map { FamilyLinkDocument.from(it) },
         )
     }
 }
 
-data class FamilyLinkDocument(val seniorId: String, val relationLabel: String?)
+data class FamilyLinkDocument(val seniorId: String, val relationLabel: String?) {
+    fun toDomain() = FamilyLink(UUID.fromString(seniorId), relationLabel)
+
+    companion object {
+        fun from(link: FamilyLink) = FamilyLinkDocument(link.seniorId.toString(), link.relationLabel)
+    }
+}
 
 @Document("seniors")
 data class SeniorDocument(

@@ -57,6 +57,14 @@ export async function getJson<T>(url: string): Promise<T> {
 
 export type Senior = { id: string; preferredName: string; fullName: string }
 
+export type Account = {
+  id: string
+  email: string
+  displayName: string
+  role: Role
+  links: { seniorId: string; relationLabel: string | null }[]
+}
+
 export const postJson = <T>(url: string, body: unknown) => sendJson<T>('POST', url, body)
 
 export const putJson = <T>(url: string, body: unknown) => sendJson<T>('PUT', url, body)
@@ -68,7 +76,7 @@ async function sendJson<T>(method: 'POST' | 'PUT', url: string, body: unknown): 
     body: JSON.stringify(body),
   })
   if (!response.ok) throw await failure(response)
-  return response.json()
+  return response.status === 204 ? (undefined as T) : response.json()
 }
 
 export async function login(email: string, password: string) {

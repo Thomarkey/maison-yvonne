@@ -9,7 +9,7 @@ import org.springframework.boot.testcontainers.service.connection.ServiceConnect
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc
 import org.springframework.http.HttpStatus
 import net.persgroep.maisonyvonne.application.domain.AccountDocument
-import net.persgroep.maisonyvonne.application.domain.FamilyLinkDocument
+import net.persgroep.maisonyvonne.application.domain.FamilyLink
 import net.persgroep.maisonyvonne.application.domain.SeniorDocument
 import net.persgroep.maisonyvonne.application.domain.Account
 import net.persgroep.maisonyvonne.application.domain.Senior
@@ -57,12 +57,12 @@ class PilotFlowTest(
         val daughter = account(
             role = UserRole.FAMILY,
             displayName = "Sophie",
-            links = listOf(FamilyLinkDocument(louisa.id.toString(), "dochter")),
+            links = listOf(FamilyLink(louisa.id, "dochter")),
         )
         val stranger = account(
             role = UserRole.FAMILY,
             displayName = "Iemand anders",
-            links = listOf(FamilyLinkDocument(otherSenior.id.toString(), "zoon")),
+            links = listOf(FamilyLink(otherSenior.id, "zoon")),
         )
 
         val visitedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS)
@@ -194,7 +194,7 @@ class PilotFlowTest(
         val daughter = account(
             role = UserRole.FAMILY,
             displayName = "An",
-            links = listOf(FamilyLinkDocument(seniorId.toString(), "dochter")),
+            links = listOf(FamilyLink(seniorId, "dochter")),
         )
         val visitedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS)
         fun visitBody(familyMessage: String) = """
@@ -256,7 +256,78 @@ class PilotFlowTest(
             .containsExactly("Yasmina")
     }
 
-    private fun login(email: String): MockHttpSession {
+    @Test
+    fun `admin creates a family account and its owner changes the password`() {
+        val admin = account(role = UserRole.ADMIN, displayName = "Yasmina")
+        val louisa = senior(preferredName = "Louisa-${UUID.randomUUID()}")
+        val email = "${UUID.randomUUID()}@example.com"
+        val givenPassword = "given-${UUID.randomUUID()}"
+        val ownPassword = "own-${UUID.randomUUID()}"
+
+        fun createAccount(session: MockHttpSession) = mockMvc.post().uri("/api/admin/accounts")
+            .session(session)
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(
+                """
+                {
+                  "email": "$email",
+                  "displayName": "Sophie",
+                  "role": "FAMILY",
+                  "password": "$givenPassword",
+                  "seniorId": "${louisa.id}",
+                  "relationLabel": "dochter"
+                }
+                """.trimIndent(),
+            )
+
+        val adminSession = login(admin.email)
+        assertThat(createAccount(adminSession)).hasStatusOk()
+        // a family member cannot hand out accounts
+        assertThat(createAccount(login(email, givenPassword))).hasStatus(HttpStatus.FORBIDDEN)
+
+        val familySession = login(email, givenPassword)
+        assertThat(mockMvc.get().uri("/api/family/dashboard").session(familySession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[0].relationLabel")
+            .isEqualTo("dochter")
+
+        fun changePassword(current: String) = mockMvc.post().uri("/api/me/password")
+            .session(familySession)
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""{ "currentPassword": "$current", "newPassword": "$ownPassword" }""")
+
+        assertThat(changePassword(current = "wrong-${UUID.randomUUID()}")).hasStatus(HttpStatus.BAD_REQUEST)
+        assertThat(changePassword(current = givenPassword)).hasStatus(HttpStatus.NO_CONTENT)
+
+        assertThat(
+            mockMvc.post().uri("/api/auth/login")
+                .param("username", email)
+                .param("password", givenPassword)
+                .with(csrf()),
+        ).hasStatus(HttpStatus.UNAUTHORIZED)
+        login(email, ownPassword)
+
+        // forgotten anyway: an admin finds the account and sets a new starting password
+        val listed = mockMvc.get().uri("/api/admin/accounts").session(adminSession).exchange()
+        assertThat(listed).hasStatusOk()
+        val accountId = JsonPath.read<List<String>>(listed.response.contentAsString, "$[?(@.email == '$email')].id").single()
+        assertThat(JsonPath.read<List<String>>(listed.response.contentAsString, "$[?(@.email == '$email')].links[0].seniorId"))
+            .containsExactly(louisa.id.toString())
+        val resetPassword = "reset-${UUID.randomUUID()}"
+        assertThat(
+            mockMvc.put().uri("/api/admin/accounts/$accountId/password")
+                .session(adminSession)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""{ "newPassword": "$resetPassword" }"""),
+        ).hasStatus(HttpStatus.NO_CONTENT)
+        login(email, resetPassword)
+    }
+
+    private fun login(email: String, password: String = this.password): MockHttpSession {
         val result = mockMvc.post().uri("/api/auth/login")
             .param("username", email)
             .param("password", password)
@@ -266,15 +337,16 @@ class PilotFlowTest(
         return result.request.session as MockHttpSession
     }
 
-    private fun account(role: UserRole, displayName: String, links: List<FamilyLinkDocument> = emptyList()): Account {
+    private fun account(role: UserRole, displayName: String, links: List<FamilyLink> = emptyList()): Account {
         val account = Account(
             id = UUID.randomUUID(),
             email = "${UUID.randomUUID()}@example.com",
             passwordHash = checkNotNull(passwords.encode(password)),
             role = role,
             displayName = displayName,
+            links = links,
         )
-        mongo.insert(AccountDocument.from(account, links))
+        mongo.insert(AccountDocument.from(account))
         return account
     }
 

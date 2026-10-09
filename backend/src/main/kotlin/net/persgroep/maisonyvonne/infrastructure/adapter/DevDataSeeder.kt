@@ -2,7 +2,7 @@ package net.persgroep.maisonyvonne.infrastructure.adapter
 
 import net.persgroep.maisonyvonne.application.domain.Account
 import net.persgroep.maisonyvonne.application.domain.AccountDocument
-import net.persgroep.maisonyvonne.application.domain.FamilyLinkDocument
+import net.persgroep.maisonyvonne.application.domain.FamilyLink
 import net.persgroep.maisonyvonne.application.domain.Senior
 import net.persgroep.maisonyvonne.application.domain.SeniorDocument
 import net.persgroep.maisonyvonne.application.domain.UserRole
@@ -40,18 +40,18 @@ class DevDataSeeder(
         mongo.insert(AccountDocument.from(account("louis@maisonyvonne.be", "Louis", UserRole.ADMIN)))
         mongo.insert(
             AccountDocument.from(
-                account = account("sophie@example.com", "Sophie", UserRole.FAMILY),
-                links = listOf(FamilyLinkDocument(louisa.id.toString(), "dochter")),
+                account("sophie@example.com", "Sophie", UserRole.FAMILY, listOf(FamilyLink(louisa.id, "dochter"))),
             ),
         )
     }
 
-    private fun account(email: String, displayName: String, role: UserRole) = Account(
+    private fun account(email: String, displayName: String, role: UserRole, links: List<FamilyLink> = emptyList()) = Account(
         id = UUID.randomUUID(),
         email = email,
         passwordHash = checkNotNull(passwords.encode(DEMO_PASSWORD)) { "encoder returned no hash" },
         role = role,
         displayName = displayName,
+        links = links,
     )
 
     private companion object {
