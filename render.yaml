@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: maison-yvonne
+    runtime: docker
+    plan: free
+    region: frankfurt
+    envVars:
+      - key: SPRING_MONGODB_URI
+        sync: false # secret: Render asks for it on first deploy
+      - key: SPRING_MONGODB_DATABASE
+        value: maisonyvonne
+      - key: SERVER_SERVLET_SESSION_COOKIE_SECURE
+        value: "true"
