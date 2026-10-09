@@ -302,7 +302,11 @@ function AccountForm({ onSaved }: { onSaved: () => void }) {
       {family && (
         <>
           <label>
-            Volgt senior
+            Relatie <span className="optional">— bv. dochter</span>
+            <input value={form.relationLabel} onChange={set('relationLabel')} />
+          </label>
+          <label>
+            Van senior
             <select value={form.seniorId} onChange={set('seniorId')} required>
               <option value="">— kies —</option>
               {seniors.data?.map((s) => (
@@ -311,10 +315,6 @@ function AccountForm({ onSaved }: { onSaved: () => void }) {
                 </option>
               ))}
             </select>
-          </label>
-          <label>
-            Relatie <span className="optional">— bv. dochter</span>
-            <input value={form.relationLabel} onChange={set('relationLabel')} />
           </label>
         </>
       )}
