@@ -18,3 +18,38 @@ server:
         same-site: lax
         # set SERVER_SERVLET_SESSION_COOKIE_SECURE=true behind HTTPS
         secure: false
+
+# --- skeleton reference: the keys the dummy Kotlin tree refers to -------------
+# Real values per environment live in application-<profile>.yaml.
+
+service:
+  name: maison-yvonne
+  environment: local
+
+# consumed by infrastructure/gateway/external (ExternalResource + FooGateway)
+external:
+  url: "http://localhost:8081"
+  api-key: "dummy-api-key"
+
+# consumed by infrastructure/adapter/external (ExternalEventHandler)
+sqs:
+  external-events-queue: "maison-yvonne-external-events-queue-local"
+
+sns:
+  email:
+    topic: "arn:aws:sns:eu-west-1:000000000000:maison-yvonne-email-requests-local"
+    source-system-id: "00000000-0000-0000-0000-000000000000"
+
+management:
+  endpoints:
+    web:
+      base-path: /actuator
+      exposure:
+        include: info, health, prometheus, metrics
+  endpoint:
+    health:
+      show-details: never
+  metrics:
+    tags:
+      environment: ${service.environment}
+      service_name: ${service.name}

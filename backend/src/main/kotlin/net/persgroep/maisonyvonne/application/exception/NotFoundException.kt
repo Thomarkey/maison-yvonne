@@ -1,3 +1,5 @@
 package net.persgroep.maisonyvonne.application.exception
 
-open class NotFoundException(override val message: String? = null) : RuntimeException(message)
+open class NotFoundException(
+    override val message: String? = null,
+) : RuntimeException(message)
