@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+  Two shapes of the same logs: JSON for the deployed environments (so the log
+  platform can index fields), human-readable for local work. Profile-scoped, so
+  nobody has to switch it by hand.
+-->
+<configuration scan="true" scanPeriod="1 minutes">
+
+    <!-- noisy third-party loggers get pinned here, not silenced in code -->
+    <logger name="org.mongodb.driver" level="WARN"/>
+
+    <springProfile name="prod | acc">
+        <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+                <timestampPattern>yyyy-MM-dd' 'HH:mm:ss.SSS</timestampPattern>
+            </encoder>
+        </appender>
+        <appender name="ASYNC_JSON" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="JSON"/>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="ASYNC_JSON"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="local | default | dev | IntegrationTests">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+                <pattern>%d{ISO8601} | %highlight(%-5level) | %-40.40logger{39} | %-15.15t | %m%n%xEx</pattern>
+            </encoder>
+        </appender>
+        <appender name="ASYNC_CONSOLE" class="ch.qos.logback.classic.AsyncAppender">
+            <appender-ref ref="CONSOLE"/>
+        </appender>
+        <root level="INFO">
+            <appender-ref ref="ASYNC_CONSOLE"/>
+        </root>
+    </springProfile>
+</configuration>

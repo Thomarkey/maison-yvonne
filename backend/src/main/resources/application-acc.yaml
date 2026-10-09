@@ -1,0 +1,22 @@
+# Profile overlay. Only what differs from application.yaml — nothing else.
+# Activated with SPRING_PROFILES_ACTIVE=acc. `prod` is the same file with
+# prod urls, prod queue names and the prod secret path.
+
+spring:
+  config:
+    # resolves the secrets this environment needs at startup; nothing secret is
+    # stored in this repo
+    import: aws-secretsmanager:acc/maison-yvonne/backend
+  mongodb:
+    database: maison-yvonne
+
+service:
+  environment: acc
+
+external:
+  url: "https://external-acc-priv.example.cloud"
+  # value comes from the imported secret, not from this file
+  api-key: ${external-api-key}
+
+sqs:
+  external-events-queue: "maison-yvonne-external-events-queue-acc"

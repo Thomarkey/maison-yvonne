@@ -1,0 +1,21 @@
+spring:
+  mongodb:
+    # overridden by @DynamicPropertySource with the Testcontainers port
+    uri: "mongodb://localhost:27017"
+    database: maison-yvonne-test
+  data:
+    mongodb:
+      auto-index-creation: true
+  main:
+    allow-bean-definition-overriding: true
+  cloud:
+    aws:
+      sqs:
+        enabled: false
+
+external:
+  url: "http://localhost:8089"
+  api-key: "test-api-key"
+
+sqs:
+  external-events-queue: "test-queue"
