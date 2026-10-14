@@ -15,7 +15,7 @@ seeds the pilot data into the `maisonyvonne` database on first run.
     ./gradlew :backend:bootRun          # http://localhost:8080/app
     cd frontend && npm run dev          # Vite on :5173, proxies /api to :8080
 
-Demo accounts (dev profile only, password `pilot2026!`):
+Demo accounts (dev profile only, password `!`):
 
     yasmina@maisonyvonne.be   admin
     louis@maisonyvonne.be     admin
