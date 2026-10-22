@@ -1,6 +1,6 @@
 export type Role = 'ADMIN' | 'FAMILY'
 
-export type Session = { displayName: string; role: Role }
+export type Session = { displayName: string; email: string; role: Role }
 
 export type MealSlot = 'FIRST' | 'SECOND' | 'LAST'
 

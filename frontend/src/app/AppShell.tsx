@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { currentSession, login, logout, postJson, type Session } from './api'
 import { AdminArea } from './AdminArea'
 import { FamilyDashboard } from './FamilyDashboard'
@@ -8,11 +8,22 @@ export function AppShell() {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [changingPassword, setChangingPassword] = useState(false)
+  const profileMenu = useRef<HTMLDetailsElement>(null)
 
   useEffect(() => {
     currentSession()
       .then(setSession)
       .finally(() => setLoading(false))
+  }, [])
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (event.target instanceof Node && !profileMenu.current?.contains(event.target)) {
+        profileMenu.current?.removeAttribute('open')
+      }
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick)
   }, [])
 
   if (loading) return <main className="app" />
@@ -22,18 +33,34 @@ export function AppShell() {
       <header className="app-bar">
         <span className="app-mark">MAISON YVONNE</span>
         {session && (
-          <span>
-            <button type="button" className="linkish" onClick={() => setChangingPassword(!changingPassword)}>
-              Wachtwoord wijzigen
-            </button>{' '}
-            <button
-              type="button"
-              className="linkish"
-              onClick={() => logout().then(() => setSession(null))}
-            >
-              Afmelden
-            </button>
-          </span>
+          <details className="profile-menu" ref={profileMenu}>
+            <summary aria-label={`Profiel van ${session.displayName}`}>
+              <span className="profile-summary-name">{session.displayName}</span>
+              <span className="profile-menu-chevron" aria-hidden="true" />
+            </summary>
+            <div className="profile-panel">
+              <span className="profile-email">{session.email}</span>
+              <span className="profile-role">{session.role === 'ADMIN' ? 'Admin' : 'Familie'}</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setChangingPassword(true)
+                  profileMenu.current?.removeAttribute('open')
+                }}
+              >
+                Wachtwoord wijzigen
+              </button>
+              <button
+                type="button"
+                onClick={() => logout().then(() => {
+                  setChangingPassword(false)
+                  setSession(null)
+                })}
+              >
+                Afmelden
+              </button>
+            </div>
+          </details>
         )}
       </header>
       {!session && <LoginForm onLoggedIn={setSession} />}

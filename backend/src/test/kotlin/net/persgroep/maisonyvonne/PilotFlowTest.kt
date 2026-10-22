@@ -69,6 +69,12 @@ class PilotFlowTest(
         val nextVisitAt = visitedAt.plus(7, ChronoUnit.DAYS)
         val adminSession = login(admin.email)
 
+        assertThat(mockMvc.get().uri("/api/me").cookie(adminSession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$.email")
+            .isEqualTo(admin.email)
+
         assertThat(
             mockMvc.post().uri("/api/admin/visits")
                 .cookie(adminSession)
