@@ -38,7 +38,11 @@ val buildFrontend by tasks.registering(Exec::class) {
     inputs.dir(frontendDir.dir("src"))
     inputs.files(frontendDir.file("package.json"), frontendDir.file("index.html"), frontendDir.file("vite.config.ts"))
     outputs.dir(frontendOut)
-    commandLine("sh", "-c", "npm install --no-audit --no-fund && npm run build")
+    if (System.getProperty("os.name").startsWith("Windows")) {
+        commandLine("cmd", "/c", "npm install --no-audit --no-fund && npm run build")
+    } else {
+        commandLine("sh", "-c", "npm install --no-audit --no-fund && npm run build")
+    }
 }
 
 sourceSets.main {

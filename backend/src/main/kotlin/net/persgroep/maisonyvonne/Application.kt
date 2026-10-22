@@ -8,7 +8,6 @@ import java.time.Clock
 @SpringBootApplication
 class Application {
 
-    /** Injected wherever "now" is needed, so tests can fix it. */
     @Bean
     fun clock(): Clock = Clock.systemUTC()
 }

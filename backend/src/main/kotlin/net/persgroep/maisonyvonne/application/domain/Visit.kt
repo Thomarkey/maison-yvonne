@@ -33,12 +33,13 @@ data class Visit(
     val check: YvonneCheck,
     val familyMessage: String,
     val momentOfWeek: String?,
-    /** Factual note for Yasmina and Louis only — never exposed to family. */
+    /** Factual note for admin only — never exposed to family. */
     val internalNote: String?,
     val meals: List<Meal>,
     val nextVisitAt: Instant?,
     val createdBy: UUID,
     val publishedAt: Instant? = null,
+    val picture: String? = null,
 ) {
     init {
         require(familyMessage.isNotBlank()) { "a visit needs an update for the family" }

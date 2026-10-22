@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getJson, postJson, putJson, type AdminVisit, type MealSlot, type Senior } from './api'
 
 const SLOTS: { slot: MealSlot; number: string; label: string; storage: string }[] = [
@@ -15,6 +15,8 @@ function localValue(date: Date) {
 const inSevenDays = (from: Date) => new Date(from.getTime() + 7 * 24 * 60 * 60 * 1000)
 
 const blankMeals = () => SLOTS.map((s) => ({ dishName: '', storageInfo: s.storage }))
+const MAX_PICTURE_BYTES = 5 * 1024 * 1024
+const ALLOWED_PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
 /** Registers a new visit, or edits [visit] and calls [onSaved] when given one. */
 export function VisitForm({
@@ -36,6 +38,10 @@ export function VisitForm({
   const [internalNote, setInternalNote] = useState(visit?.internalNote ?? '')
   const [familyMessage, setFamilyMessage] = useState(visit?.familyMessage ?? '')
   const [momentOfWeek, setMomentOfWeek] = useState(visit?.momentOfWeek ?? '')
+  const [picture, setPicture] = useState(visit?.picture ?? null)
+  const [readingPicture, setReadingPicture] = useState(false)
+  const pictureFileInput = useRef<HTMLInputElement>(null)
+  const pictureCameraInput = useRef<HTMLInputElement>(null)
   const [meals, setMeals] = useState(() =>
     visit
       ? SLOTS.map((s) => {
@@ -77,6 +83,7 @@ export function VisitForm({
       internalNote: attention ? internalNote : null,
       meals: SLOTS.map((s, i) => ({ slot: s.slot, ...meals[i] })),
       nextVisitAt: nextVisitAt ? new Date(nextVisitAt).toISOString() : null,
+      picture,
     }
     ;(visit ? putJson(`/api/admin/visits/${visit.id}`, body) : postJson('/api/admin/visits', body))
       .then(() => {
@@ -87,9 +94,42 @@ export function VisitForm({
         setInternalNote('')
         setAttention(false)
         setMeals(blankMeals())
+        setPicture(null)
+        if (pictureFileInput.current) pictureFileInput.current.value = ''
+        if (pictureCameraInput.current) pictureCameraInput.current.value = ''
       })
       .catch((e: Error) => setError(e.message))
       .finally(() => setBusy(false))
+  }
+
+  const readPicture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+    setError(null)
+    if (!ALLOWED_PICTURE_TYPES.includes(file.type)) {
+      setError('Kies een JPEG-, PNG- of WebP-afbeelding.')
+      event.target.value = ''
+      return
+    }
+    if (file.size > MAX_PICTURE_BYTES) {
+      setError('De foto mag maximaal 5 MB groot zijn.')
+      event.target.value = ''
+      return
+    }
+    setReadingPicture(true)
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === 'string') setPicture(reader.result)
+      else setError('De foto kon niet worden gelezen.')
+      setReadingPicture(false)
+      event.target.value = ''
+    }
+    reader.onerror = () => {
+      setError('De foto kon niet worden gelezen.')
+      setReadingPicture(false)
+      event.target.value = ''
+    }
+    reader.readAsDataURL(file)
   }
 
   if (publishedFor) {
@@ -162,7 +202,7 @@ export function VisitForm({
       </fieldset>
 
       <label>
-        Update voor de familie
+        Update voor de familie <span className="optional">— verplicht</span>
         <textarea
           rows={4}
           value={familyMessage}
@@ -177,7 +217,64 @@ export function VisitForm({
         <input value={momentOfWeek} onChange={(e) => setMomentOfWeek(e.target.value)} />
       </label>
 
-      <fieldset>
+      <label>
+        Foto <span className="optional">— optioneel, JPEG/PNG/WebP (max. 5 MB)</span>
+        <span className="picture-actions">
+          <button
+            className="linkish"
+            type="button"
+            disabled={readingPicture}
+            onClick={() => pictureFileInput.current?.click()}
+          >
+            Kies bestand
+          </button>
+          <button
+            className="linkish"
+            type="button"
+            disabled={readingPicture}
+            onClick={() => pictureCameraInput.current?.click()}
+          >
+            Neem foto
+          </button>
+        </span>
+        <input
+          ref={pictureFileInput}
+          className="picture-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={readPicture}
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+        <input
+          ref={pictureCameraInput}
+          className="picture-input"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          onChange={readPicture}
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      </label>
+      {picture && (
+        <div className="visit-picture-preview">
+          <img src={picture} alt="Voorbeeld van de bezoekfoto" />
+          <button
+            className="linkish"
+            type="button"
+            onClick={() => {
+              setPicture(null)
+              if (pictureFileInput.current) pictureFileInput.current.value = ''
+              if (pictureCameraInput.current) pictureCameraInput.current.value = ''
+            }}
+          >
+            Foto verwijderen
+          </button>
+        </div>
+      )}
+
+      <fieldset className="meal-section">
         <legend>Maaltijden</legend>
         <datalist id="dish-names">
           {dishNames.map((name) => (
@@ -221,7 +318,7 @@ export function VisitForm({
       </label>
 
       {error && <p className="error">{error}</p>}
-      <button className="btn publish" type="submit" disabled={busy}>
+      <button className="btn publish" type="submit" disabled={busy || readingPicture}>
         {visit ? 'Opslaan' : 'Publiceren'}
       </button>
       {onSaved && (

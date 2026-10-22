@@ -97,6 +97,7 @@ data class VisitDocument(
     val nextVisitAt: Instant?,
     val createdBy: String,
     val publishedAt: Instant?,
+    val picture: String? = null,
 ) {
     /** Drops the internal note on the way out, so it cannot reach a family DTO. */
     fun toFamilyVisit() = toDomain(internalNote = null)
@@ -117,6 +118,7 @@ data class VisitDocument(
         nextVisitAt = nextVisitAt,
         createdBy = UUID.fromString(createdBy),
         publishedAt = publishedAt,
+        picture = picture,
     )
 
     companion object {
@@ -133,6 +135,7 @@ data class VisitDocument(
             nextVisitAt = visit.nextVisitAt,
             createdBy = visit.createdBy.toString(),
             publishedAt = visit.publishedAt,
+            picture = visit.picture,
         )
     }
 }

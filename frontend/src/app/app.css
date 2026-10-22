@@ -4,6 +4,15 @@
   padding: 1rem 1rem 4rem;
 }
 
+.app .btn {
+  background: var(--green);
+  padding: 0.65rem 1.25rem;
+}
+
+.app .btn:hover {
+  background: #33432f;
+}
+
 .app-bar {
   display: flex;
   align-items: center;
@@ -155,11 +164,35 @@
   margin-top: 0.5rem;
 }
 
+.picture-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.picture-input {
+  display: none !important;
+}
+
 .btn.publish,
 .login .btn {
   width: 100%;
   justify-content: center;
-  padding-block: 1.1rem;
+  padding-block: 0.85rem;
+}
+
+.visit-form > .btn.publish {
+  margin-top: 1rem;
+}
+
+.visit-form > .linkish {
+  display: block;
+  margin: 1.25rem 0 0 auto;
+}
+
+.visit-form > .meal-section {
+  margin-top: 1.5rem;
 }
 
 .error {
@@ -260,6 +293,25 @@ p.check--attention {
 .card.next,
 .card.published {
   text-align: center;
+}
+
+.visit-picture,
+.visit-picture-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 28rem;
+  margin: 1rem auto 0;
+  border-radius: 0.75rem;
+  object-fit: contain;
+}
+
+.visit-picture-preview {
+  margin: -0.5rem 0 1.5rem;
+}
+
+.visit-picture-preview .linkish {
+  display: block;
+  margin: 0.5rem auto 0;
 }
 
 .card.published .tick {

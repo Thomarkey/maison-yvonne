@@ -48,6 +48,7 @@ data class VisitRequest(
     val internalNote: String?,
     val meals: List<MealRequest>,
     val nextVisitAt: Instant?,
+    val picture: String? = null,
 ) {
     /** [registeredBy] comes from the principal, never from the request body. */
     fun toRegisterVisitCommand(registeredBy: UUID) =
@@ -67,6 +68,7 @@ data class VisitRequest(
         internalNote = internalNote?.trim(),
         meals = meals.map { it.toMeal() },
         nextVisitAt = nextVisitAt,
+        picture = picture,
     )
 }
 
@@ -100,6 +102,7 @@ data class AdminVisitDTO(
     val meals: List<MealDTO>,
     val nextVisitAt: Instant?,
     val publishedAt: Instant?,
+    val picture: String?,
     /** Display name of the admin who registered the visit; null if that account is gone. */
     val registeredBy: String?,
 ) {
@@ -118,6 +121,7 @@ data class AdminVisitDTO(
             meals = visit.meals.map { MealDTO.from(it) },
             nextVisitAt = visit.nextVisitAt,
             publishedAt = visit.publishedAt,
+            picture = visit.picture,
             registeredBy = registeredBy,
         )
     }
@@ -132,6 +136,7 @@ data class FamilyVisitDTO(
     val momentOfWeek: String?,
     val meals: List<MealDTO>,
     val nextVisitAt: Instant?,
+    val picture: String?,
 ) {
     companion object {
         fun from(visit: Visit) = FamilyVisitDTO(
@@ -142,6 +147,7 @@ data class FamilyVisitDTO(
             momentOfWeek = visit.momentOfWeek,
             meals = visit.meals.map { MealDTO.from(it) },
             nextVisitAt = visit.nextVisitAt,
+            picture = visit.picture,
         )
     }
 }

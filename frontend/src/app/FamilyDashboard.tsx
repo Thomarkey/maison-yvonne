@@ -55,6 +55,9 @@ export function FamilyDashboard() {
 
             <section className="card">
               <p className="message">{lastVisit.familyMessage}</p>
+              {lastVisit.picture && (
+                <img className="visit-picture" src={lastVisit.picture} alt={`Foto van het bezoek bij ${senior.preferredName}`} />
+              )}
               {lastVisit.momentOfWeek && (
                 <>
                   <p className="eyebrow">Moment van de week</p>

@@ -17,6 +17,7 @@ export type FamilyUpdate = {
     momentOfWeek: string | null
     meals: Meal[]
     nextVisitAt: string | null
+    picture: string | null
   } | null
 }
 
@@ -32,6 +33,7 @@ export type AdminVisit = {
   meals: Meal[]
   nextVisitAt: string | null
   publishedAt: string | null
+  picture: string | null
   registeredBy: string | null
 }
 

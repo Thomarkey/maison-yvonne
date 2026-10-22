@@ -1,4 +1,4 @@
-# Maison Yvonne
+d fromn# Maison Yvonne
 
 Monolith: Spring Boot (Kotlin) backend that serves the React frontend bundle.
 
@@ -15,7 +15,10 @@ seeds the pilot data into the `maisonyvonne` database on first run.
     ./gradlew :backend:bootRun          # http://localhost:8080/app
     cd frontend && npm run dev          # Vite on :5173, proxies /api to :8080
 
-Demo accounts (dev profile only, password `!`):
+When running `ApplicationKt` directly from IntelliJ, set the program argument
+`--spring.profiles.active=dev`; otherwise the dev-only seeder is not enabled.
+
+Demo accounts (dev profile only, password `yvonne`):
 
     yasmina@maisonyvonne.be   admin
     louis@maisonyvonne.be     admin

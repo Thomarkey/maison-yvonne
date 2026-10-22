@@ -197,7 +197,8 @@ class PilotFlowTest(
             links = listOf(FamilyLink(seniorId, "dochter")),
         )
         val visitedAt = Instant.now().truncatedTo(ChronoUnit.SECONDS)
-        fun visitBody(familyMessage: String) = """
+        val picture = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jXioAAAAASUVORK5CYII="
+        fun visitBody(familyMessage: String, picture: String? = null) = """
             {
               "seniorId": "$seniorId",
               "scheduledAt": "$visitedAt",
@@ -205,7 +206,8 @@ class PilotFlowTest(
               "check": "ALL_AS_USUAL",
               "familyMessage": "$familyMessage",
               "meals": [],
-              "nextVisitAt": null
+              "nextVisitAt": null,
+              "picture": ${picture?.let { "\"$it\"" } ?: "null"}
             }
         """.trimIndent()
 
@@ -213,7 +215,7 @@ class PilotFlowTest(
             .cookie(yasminaSession)
             .with(csrf())
             .contentType(MediaType.APPLICATION_JSON)
-            .content(visitBody("Jos was niet thuis."))
+            .content(visitBody("Jos was niet thuis.", picture))
             .exchange()
         assertThat(registered).hasStatusOk()
         val visitId = JsonPath.read<String>(registered.response.contentAsString, "$.id")
@@ -232,7 +234,7 @@ class PilotFlowTest(
                 .cookie(yasminaSession)
                 .with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(visitBody("Jos was bij de buren.")),
+                .content(visitBody("Jos was bij de buren.", picture)),
         ).hasStatusOk()
 
         assertThat(mockMvc.get().uri("/api/family/dashboard").cookie(login(daughter.email)))
@@ -240,12 +242,22 @@ class PilotFlowTest(
             .bodyJson()
             .extractingPath("$[0].lastVisit.familyMessage")
             .isEqualTo("Jos was bij de buren.")
+        assertThat(mockMvc.get().uri("/api/family/dashboard").cookie(login(daughter.email)))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[0].lastVisit.picture")
+            .isEqualTo(picture)
         assertThat(mockMvc.get().uri("/api/admin/visits/mine").cookie(yasminaSession))
             .hasStatusOk()
             .bodyJson()
             .extractingPath("$[*].id")
             .asArray()
             .containsExactly(visitId)
+        assertThat(mockMvc.get().uri("/api/admin/visits/mine").cookie(yasminaSession))
+            .hasStatusOk()
+            .bodyJson()
+            .extractingPath("$[0].picture")
+            .isEqualTo(picture)
 
         // the seniors overview shows who did the visit, also to other admins
         assertThat(mockMvc.get().uri("/api/admin/visits").cookie(louisSession))

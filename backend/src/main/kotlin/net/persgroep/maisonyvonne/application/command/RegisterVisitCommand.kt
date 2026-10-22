@@ -17,6 +17,7 @@ data class VisitDetails(
     val internalNote: String?,
     val meals: List<Meal>,
     val nextVisitAt: Instant?,
+    val picture: String? = null,
 ) {
     fun toVisit(id: UUID, createdBy: UUID, publishedAt: Instant?) = Visit(
         id = id,
@@ -31,6 +32,7 @@ data class VisitDetails(
         nextVisitAt = nextVisitAt,
         createdBy = createdBy,
         publishedAt = publishedAt,
+        picture = picture,
     )
 }
 
